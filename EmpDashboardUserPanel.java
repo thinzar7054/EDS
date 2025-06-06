@@ -4,34 +4,33 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import Controller.AdminDashboardController;
-import Model.AdminModel;
+import Controller.EmployeeDAO;
+import Model.EmployeeDetailsModel;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdminDashboard extends JPanel {
-    private AdminNavBar parentFrame;
+public class EmpDashboardUserPanel extends JPanel {
+    private EmployeeNavBar parentFrame;
     private static final long serialVersionUID = 1L;
     private JTextField txtSearch;
     private JPanel gridPanel;
-    private AdminDashboardController employeeDAO;
+    private EmployeeDAO employeeDAO;
 
-    public AdminDashboard(AdminNavBar parentFrame) {
+    public EmpDashboardUserPanel(EmployeeNavBar parentFrame) {
         this.parentFrame = parentFrame;
         setBackground(Color.WHITE);
         setLayout(null);
-        this.employeeDAO = new AdminDashboardController();
+        this.employeeDAO = new EmployeeDAO();
 
         initializeUI();
-        loadAdmin();
+        loadEmployees();
     }
 
     private void initializeUI() {
-        JLabel lblHeader = new JLabel("Admin Dashboard");
+        JLabel lblHeader = new JLabel("Employee Dashboard");
         lblHeader.setFont(new Font("Arial", Font.BOLD, 22));
         lblHeader.setForeground(new Color(51, 51, 51));
         lblHeader.setBounds(33, 20, 400, 60);
@@ -48,10 +47,10 @@ public class AdminDashboard extends JPanel {
         btnSearch.addActionListener(e -> {
             String keyword = txtSearch.getText().trim();
             if (keyword.isEmpty() || keyword.equals("Search By Name or Department")) {
-                loadAdmin();
+                loadEmployees();
                 return;
             }
-            searchAdmin(keyword);
+            searchEmployees(keyword);
         });
         btnSearch.setBackground(new Color(255, 59, 48)); // Red color
         btnSearch.setForeground(Color.WHITE);
@@ -85,13 +84,13 @@ public class AdminDashboard extends JPanel {
         add(scrollPane);
     }
 
-    void loadAdmin() {
+    public void loadEmployees() {
         gridPanel.removeAll();
         try {
-            List<AdminModel> admin = employeeDAO.getAllEmployeesWithDetails();
+            List<EmployeeDetailsModel> employees = employeeDAO.getAllEmployeesWithDetails();
 
-            if (admin.isEmpty()) {
-                JLabel noDataLabel = new JLabel("No admin data found");
+            if (employees.isEmpty()) {
+                JLabel noDataLabel = new JLabel("No employee data found");
                 noDataLabel.setFont(new Font("Arial", Font.ITALIC, 16));
                 noDataLabel.setForeground(new Color(107, 114, 128));
                 noDataLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -99,7 +98,7 @@ public class AdminDashboard extends JPanel {
                 gridPanel.add(noDataLabel);
                 gridPanel.add(Box.createVerticalGlue());
             } else {
-                for (AdminModel emp : admin) {
+                for (EmployeeDetailsModel emp : employees) {
                     addEmployeeCard(emp);
                 }
             }
@@ -111,7 +110,7 @@ public class AdminDashboard extends JPanel {
         gridPanel.repaint();
     }
 
-    private void addEmployeeCard(AdminModel emp) {
+    private void addEmployeeCard(EmployeeDetailsModel emp) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
@@ -123,34 +122,29 @@ public class AdminDashboard extends JPanel {
         card.setOpaque(true);
         card.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Subtle shadow
-        card.setBackground(Color.WHITE);
-        card.setOpaque(true);
-        card.setDoubleBuffered(true);
-
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         infoPanel.setBackground(Color.WHITE);
 
-        JLabel nameLabel = new JLabel("<html><a href='#' style='color:#333333;text-decoration:none;'>" + emp.getName() + "</a></html>");
+        JLabel nameLabel = new JLabel("<html><a href='#' style='color:#333333;text-decoration:none;'>" + emp.getEmpName() + "</a></html>");
         nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nameLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         nameLabel.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                parentFrame.getCardLayout().show(parentFrame.getContentPanel(), "AdminDetails");
-                parentFrame.setActiveNav("Admin Details");
-                AdminDetailsAdminView detailsView = (AdminDetailsAdminView) parentFrame.getPanels().get("AdminDetails");
-                detailsView.loadAdminData(emp);
+                parentFrame.getCardLayout().show(parentFrame.getContentPanel(), "EmployeeDetails");
+                parentFrame.setActiveNav("Employee Details");
+                EmployeeDetailUserView detailsView = (EmployeeDetailUserView) parentFrame.getPanels().get("EmployeeDetails");
+                detailsView.loadEmployeeData(emp);
             }
 
             public void mouseEntered(MouseEvent e) {
-                nameLabel.setText("<html><a href='#' style='color:#0066cc; text-decoration:underline;'>" + emp.getName() + "</a></html>");
+                nameLabel.setText("<html><a href='#' style='color:#0066cc; text-decoration:underline;'>" + emp.getEmpName() + "</a></html>");
             }
 
             public void mouseExited(MouseEvent e) {
-                nameLabel.setText("<html><a href='#' style='color:#333333;text-decoration:none;'>" + emp.getName() + "</a></html>");
+                nameLabel.setText("<html><a href='#' style='color:#333333;text-decoration:none;'>" + emp.getEmpName() + "</a></html>");
             }
         });
 
@@ -164,36 +158,17 @@ public class AdminDashboard extends JPanel {
         infoPanel.add(detailsLabel);
         card.add(infoPanel, BorderLayout.CENTER);
 
-        URL iconURL = getClass().getResource("/image/bin.png");
-        ImageIcon icon = null;
-        if (iconURL != null) {
-            icon = new ImageIcon(iconURL);
-        } else {
-            System.err.println("Icon not found");
-        }
-
-        JButton btnDelete = new JButton(icon);
-        btnDelete.setBackground(new Color(255, 59, 48));
-        btnDelete.setFocusPainted(false);
-        btnDelete.setBorderPainted(false);
-        btnDelete.setContentAreaFilled(false);
-        btnDelete.setOpaque(true);
-        btnDelete.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnDelete.setPreferredSize(new Dimension(44, 44));
-        btnDelete.addActionListener(e -> deleteAdmin(emp));
-        card.add(btnDelete, BorderLayout.EAST);
-
         gridPanel.add(card);
         gridPanel.add(Box.createVerticalStrut(12));  // spacing between cards
     }
 
-    private void searchAdmin(String searchText) {
+    private void searchEmployees(String searchText) {
         try {
-            List<AdminModel> allEmployees = employeeDAO.getAllEmployeesWithDetails();
-            List<AdminModel> filteredEmployees = new ArrayList<>();
+            List<EmployeeDetailsModel> allEmployees = employeeDAO.getAllEmployeesWithDetails();
+            List<EmployeeDetailsModel> filteredEmployees = new ArrayList<>();
 
-            for (AdminModel emp : allEmployees) {
-                if (emp.getName().toLowerCase().contains(searchText.toLowerCase())
+            for (EmployeeDetailsModel emp : allEmployees) {
+                if (emp.getEmpName().toLowerCase().contains(searchText.toLowerCase())
                         || emp.getDepartment().toLowerCase().contains(searchText.toLowerCase())) {
                     filteredEmployees.add(emp);
                 }
@@ -201,7 +176,7 @@ public class AdminDashboard extends JPanel {
 
             gridPanel.removeAll();
             if (filteredEmployees.isEmpty()) {
-                JLabel noDataLabel = new JLabel("No matching admin found");
+                JLabel noDataLabel = new JLabel("No matching employees found");
                 noDataLabel.setFont(new Font("Arial", Font.ITALIC, 16));
                 noDataLabel.setForeground(new Color(107, 114, 128));
                 noDataLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -209,78 +184,56 @@ public class AdminDashboard extends JPanel {
                 gridPanel.add(noDataLabel);
                 gridPanel.add(Box.createVerticalGlue());
             } else {
-                for (AdminModel emp : filteredEmployees) {
+                for (EmployeeDetailsModel emp : filteredEmployees) {
                     addEmployeeCard(emp);
                 }
             }
             gridPanel.revalidate();
             gridPanel.repaint();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error searching admin data: " + ex.getMessage(), "Database Error",
+            JOptionPane.showMessageDialog(this, "Error searching employee data: " + ex.getMessage(), "Database Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void deleteAdmin(AdminModel emp) {
-        int confirm = JOptionPane.showConfirmDialog(this, "Delete " + emp.getName() + "?", "Confirm Delete",
-                JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (employeeDAO.deleteAdmin(emp.getAdmId())) {
-                    loadAdmin(); // Refresh the list
-                } else {
-                    JOptionPane.showMessageDialog(this, "Failed to delete admin", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            parentFrame.refreshAdminDashboard();
-            parentFrame.getCardLayout().show(parentFrame.getContentPanel(), "AdminDashboard");
-            parentFrame.setActiveNav("Admin Dashboard");
-            txtSearch.setText("");
-        }
-    }
-
-    private void setPlaceholder(JTextField txtSearch, String placeholder) {
-        txtSearch.setForeground(new Color(156, 163, 175)); // placeholder gray
-        txtSearch.setText(placeholder);
+    private void setPlaceholder(JTextField textField, String placeholder) {
+        textField.setForeground(new Color(156, 163, 175)); // placeholder gray
+        textField.setText(placeholder);
         final boolean[] showingPlaceholder = { true };
 
-        txtSearch.addFocusListener(new FocusAdapter() {
+        textField.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 if (showingPlaceholder[0]) {
-                    txtSearch.setText("");
-                    txtSearch.setForeground(new Color(51, 51, 51)); // dark text
+                    textField.setText("");
+                    textField.setForeground(new Color(51, 51, 51)); // dark text
                     showingPlaceholder[0] = false;
                 }
             }
 
             public void focusLost(FocusEvent e) {
-                if (txtSearch.getText().isEmpty()) {
-                    txtSearch.setForeground(new Color(156, 163, 175));
-                    txtSearch.setText(placeholder);
+                if (textField.getText().isEmpty()) {
+                    textField.setForeground(new Color(156, 163, 175));
+                    textField.setText(placeholder);
                     showingPlaceholder[0] = true;
                 }
             }
         });
 
-        txtSearch.addKeyListener(new KeyAdapter() {
+        textField.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (showingPlaceholder[0]) {
-                    txtSearch.setText("");
-                    txtSearch.setForeground(new Color(51, 51, 51));
+                    textField.setText("");
+                    textField.setForeground(new Color(51, 51, 51));
                     showingPlaceholder[0] = false;
                 }
             }
         });
 
-        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
+        textField.getDocument().addDocumentListener(new DocumentListener() {
             private void handleChange() {
-                String keyword = txtSearch.getText().trim();
+                String keyword = textField.getText().trim();
                 if (keyword.isEmpty() || keyword.equals(placeholder)) {
-                    loadAdmin();
+                    loadEmployees();
                 }
             }
 
@@ -298,4 +251,3 @@ public class AdminDashboard extends JPanel {
         });
     }
 }
-
